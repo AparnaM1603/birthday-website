@@ -400,7 +400,6 @@ function startWishSection() {
   if (bgMusic) bgMusic.pause();
 }
 
-
 function saveWish() {
   const wish = document.getElementById("wish-input").value;
   if (!wish) {
@@ -408,18 +407,21 @@ function saveWish() {
     return;
   }
 
-  // Send wish to Google Sheets via Web App
-  fetch("https://script.google.com/macros/s/AKfycbwj5KwjllKDKnnbL8H1rgwBA5cIDIh7bsXznueoNdJLCUKo-FAGOwBU_F7K1kkT1pThJw/exec", {
-    method: "POST",
-      headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ wish: wish })
-  });
+  // Create a timestamp
+  const now = new Date().toLocaleString();
+  const wishText = `Time: ${now}\nWish: ${wish}\n\n`;
 
-  alert("Wish saved! ✨");
+  // Create a Blob and trigger download
+  const blob = new Blob([wishText], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "birthday-wish.txt"; // You can make it "wish-1.txt" etc.
+  a.click();
+  URL.revokeObjectURL(url);
 
-  // Transition to the final screen
+  alert("Wish saved as a file on your device! ✨");
+
   revealFinal();
 }
 
