@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Birthday Constellation Quest</title>
+  <link href="https://script.google.com/macros/s/AKfycbwj5KwjllKDKnnbL8H1rgwBA5cIDIh7bsXznueoNdJLCUKo-FAGOwBU_F7K1kkT1pThJw/exec" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Quicksand', sans-serif;
+      background: linear-gradient(to top, #0f0c29, #302b63, #24243e);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    .section {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+      padding: 2em;
+      z-index: 1;
+    }
+    .section.active { display: flex; }
+
+    h1, h2 { font-family: 'Pacifico', cursive; }
+
+    input, button, textarea {
+      padding: 10px;
+      font-size: 1em;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    .stars {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 2s infinite ease-in-out;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    #firework-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .puzzle-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 2px;
+    }
+    .tile {
+      width: 100px; height: 100px;
+      background-image: url('assets/dogs.jpg');
+      background-size: 300px 300px;
+      border: 1px solid white;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+    .tile.empty {
+      background: white;
+      cursor: default;
+    }
+
+    .memory-photo {
+      width: 250px;             /* ✅ Fixed width */
+  height: 300px;            /* ✅ Fixed height */
+  object-fit: cover;  
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(255,255,255,0.3);
+  margin: 1em auto;
+  transition: opacity 0.5s ease-in-out;
+  display: block;
+}
+
+  </style>
+</head>
+<body>
+  <div id="twinkling-stars" class="stars"></div>
+  <canvas id="firework-canvas"></canvas>
+
+  <div id="start-screen" class="section active">
+    <h1>✨ Welcome to Your Constellation Quest ✨</h1>
+    <p>Ready to unlock your birthday stars?</p>
+    <button onclick="startGame()">Begin</button>
+  </div>
+
+  <div id="puzzle-1" class="section">
+    <h2>🔒 Puzzle 1: Riddle Me This</h2>
+    <p>What class did we met in?</p>
+    <input id="answer1" placeholder="Type your answer">
+    <button onclick="checkRiddle()">Unlock Star</button>
+    <p id="riddle-result"></p>
+  </div>
+
+  <div id="puzzle-2" class="section">
+    <h2>🧠 Puzzle 2: Emoji Decode</h2>
+    <p>Where did you spend most of your class 11 at in school?</p>
+    <input id="answer2" placeholder="Your answer">
+    <button onclick="checkPuzzle2()">Unlock Star</button>
+    <p id="riddle-result2"></p>
+  </div>
+  
+  <div id="puzzle-3" class="section">
+    <h2>💡 Puzzle 3: Emoji Decode Challenge</h2>
+    <p>Each emoji represents a moment from our school life — guess what they mean!</p>
+  
+    <ol>
+      <li>♟️ - <input id="emoji1" placeholder="Your guess"></li>
+      <li>🖥️ - <input id="emoji2" placeholder="Your guess"></li>
+      <li>⭐ - <input id="emoji3" placeholder="Your guess"></li>
+      <li>⚽ - <input id="emoji4" placeholder="Your guess"></li>
+    </ol>
+  
+    <button onclick="checkEmojiDecode()">Unlock Next Star</button>
+    <p id="emoji-result"></p>
+  </div>
+
+
+  
+  <div id="puzzle-4" class="section">
+    <h2>🧩 Puzzle 4: Picture Slide</h2>
+    <p>Rearrange the tiles to reveal something heart-melting 🐶</p>
+    <div class="puzzle-board" id="board"></div>
+    <p id="slide-result"></p>
+  </div>
+  
+  <div id="bonus-choice" class="section hidden">
+    <h2>🎁 Choose Your Bonus Surprise</h2>
+    <button onclick="startWishSection()">🎂 Make a Wish</button>
+    <button onclick="startPhotoLane()">📸 Photo Memory Lane</button>
+  </div>
+  
+<!-- 🎂 Make a Wish Section -->
+<div id="make-a-wish" class="section hidden">
+  <h2>🎂 Make a Wish!</h2>
+
+  <div class="cake">
+    <img src="assets/logo.gif" alt="Birthday Cake with Candles" />
+  </div>
+
+  <!-- 🎵 Birthday Song -->
+  <audio id="birthday-song" src="assets/music/birthday_special.mp3" autoplay loop></audio>
+
+  <p>Write your birthday wish below:</p>
+  <textarea id="wish-input" rows="4" cols="50" placeholder="Your secret wish..."></textarea><br>
+  <button onclick="saveWish()">✨ Submit Wish</button>
+</div>
+
+<div id="photo-lane" class="section hidden">
+  <h2>📸 Memory Lane</h2>
+  <div id="photo-gallery"></div>
+</div>
+
+  <div id="star-gallery" class="section">
+    <h2>🌟 Your Collected Stars</h2>
+    <div id="stars-unlocked"></div>
+    <button onclick="goToNextPuzzle()">Continue</button>
+  </div>
+  <div id="final-surprise" class="section hidden">
+    <h2>🌌 Your Constellation</h2>
+    <p>You’ve unlocked all the stars ✨</p>
+    <p id="final-message">Here's a special message just for you...</p>
+  </div>
+  
+  <script>
+    // 🌟 Twinkling stars
+    const starContainer = document.getElementById("twinkling-stars");
+    for (let i = 0; i < 100; i++) {
+      const star = document.createElement("div");
+      star.classList.add("star");
+      star.style.top = Math.random() * 100 + "%";
+      star.style.left = Math.random() * 100 + "%";
+      star.style.animationDuration = 1.5 + Math.random() * 2 + "s";
+      starContainer.appendChild(star);
+    }
+
+    // 🔥 Fireworks
+    function triggerFireworks() {
+      const canvas = document.getElementById('firework-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      let fireworks = [];
+
+      function Firework() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height;
+        this.targetY = Math.random() * canvas.height / 2;
+        this.exploded = false;
+        this.particles = [];
+        this.hue = Math.floor(Math.random() * 360);
+
+        this.update = function () {
+          if (!this.exploded) {
+            this.y -= 5;
+            if (this.y <= this.targetY) {
+              this.exploded = true;
+              for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 1;
+                this.particles.push({
+                  x: this.x,
+                  y: this.y,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  alpha: 1
+                });
+              }
+            }
+          } else {
+            this.particles.forEach(p => {
+              p.x += p.vx;
+              p.y += p.vy;
+              p.alpha -= 0.02;
+            });
+            this.particles = this.particles.filter(p => p.alpha > 0);
+          }
+        };
+
+        this.draw = function () {
+          if (!this.exploded) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,1)`;
+            ctx.fill();
+          } else {
+            this.particles.forEach(p => {
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+              ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${p.alpha})`;
+              ctx.fill();
+            });
+          }
+        };
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (Math.random() < 0.05) fireworks.push(new Firework());
+        fireworks.forEach(fw => { fw.update(); fw.draw(); });
+        fireworks = fireworks.filter(fw => fw.particles.length > 0 || !fw.exploded);
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    const skipBtn = document.getElementById("skipPuzzle4");
+if (skipBtn) skipBtn.remove();
+
+    // 🌟 Game logic
+    const stars = [];
+    function startGame() {
+      showSection('puzzle-1');
+    }
+    function checkRiddle() {
+  const answer = document.getElementById('answer1').value.toLowerCase();
+  if (["9", "class 9", "class 9th"].some(keyword => answer.includes(keyword))) {
+    document.getElementById('riddle-result').innerText = "✅ Star 1 unlocked!";
+    unlockStar("Star 1: 'Start of Everything!'");
+    setTimeout(() => showSection("star-gallery"), 1500);
+  } else {
+    alert("Try again! Hint: Post-Covid Era!");
+  }
+}
+
+    function checkPuzzle2() {
+  const answer = document.getElementById('answer2').value.toLowerCase().trim();
+  const acceptedAnswers = ["computer lab", "lab"];
+
+  if (acceptedAnswers.includes(answer)) {
+    document.getElementById('riddle-result2').innerText = "✅ Star 2 unlocked!";
+    unlockStar("Star 2: 'One day, you'll build your dream with code 💻'");
+    setTimeout(() => showSection("star-gallery"), 1500);
+  } else {
+    document.getElementById('riddle-result2').innerText = "❌ Not quite! Hint: It's a techie!!";
+  }
+}
+
+function checkEmojiDecode() {
+  const ans1 = document.getElementById('emoji1').value.toLowerCase().trim();
+  const ans2 = document.getElementById('emoji2').value.toLowerCase().trim();
+  const ans3 = document.getElementById('emoji3').value.toLowerCase().trim();
+  const ans4 = document.getElementById('emoji4').value.toLowerCase().trim();
+
+  let correct = 0;
+
+  if (ans1.includes("chess")) correct++;
+  if (ans2.includes("coding") || ans2.includes("computer") || ans2.includes("lab")) correct++;
+  if (ans3.includes("stars") || ans3.includes("gift") || ans3.includes("award")) correct++;
+  if (ans4.includes("football") || ans4.includes("trust") || ans4.includes("team")) correct++;
+
+  if (correct >= 3) {
+    document.getElementById('emoji-result').innerText = "✅ Star 3 unlocked!";
+    unlockStar("Star 3: 'These moments shine brighter with memories ✨'");
+    setTimeout(() => showSection("star-gallery"), 1500);
+  } else {
+    document.getElementById('emoji-result').innerText = "❌ Hmm... Try again! Hint: Think school activities!";
+  }
+}
+
+let size = 3;
+let tiles = [];
+
+function startSlidingPuzzle() {
+  showSection("puzzle-4");
+  createBoard();
+}
+
+function createBoard() {
+  const board = document.getElementById('board');
+  tiles = [];
+
+  for (let i = 0; i < size * size - 1; i++) {
+    tiles.push(i);
+  }
+  tiles.push(null);
+  shuffle(tiles);
+  draw(board);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function draw(board) {
+  board.innerHTML = '';
+  tiles.forEach((tile, i) => {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    if (tile === null) {
+      div.classList.add('empty');
+    } else {
+      const row = Math.floor(tile / size);
+      const col = tile % size;
+      div.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+    }
+    div.addEventListener('click', () => moveTile(i, board));
+    board.appendChild(div);
+  });
+}
+
+function moveTile(i, board) {
+  const emptyIndex = tiles.indexOf(null);
+  const row = Math.floor(i / size);
+  const col = i % size;
+  const emptyRow = Math.floor(emptyIndex / size);
+  const emptyCol = emptyIndex % size;
+
+  if (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1) {
+    [tiles[i], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[i]];
+    draw(board);
+    checkWin();
+  }
+}
+
+function checkWin() {
+  for (let i = 0; i < tiles.length - 1; i++) {
+    if (tiles[i] !== i) return;
+  }
+  document.getElementById('slide-result').innerText = "✅ Star 4 unlocked! Puppy magic solved!";
+  unlockStar("Star 4: 'Puppy love never fails!'");
+  setTimeout(() => showSection('bonus-choice'), 2000); // 👈 This was missing
+}
+
+function startWishSection() {
+  showSection("make-a-wish");
+
+  const birthdaySong = document.getElementById("birthday-song");
+  if (birthdaySong) {
+    birthdaySong.currentTime = 0;
+    birthdaySong.play();
+  }
+
+  // Optional: Pause background music if playing
+  const bgMusic = document.getElementById("bgMusic");
+  if (bgMusic) bgMusic.pause();
+}
+
+
+function saveWish() {
+  const wish = document.getElementById("wish-input").value;
+  if (!wish) {
+    alert("Please write a wish first!");
+    return;
+  }
+
+  // Send wish to Google Sheets via Web App
+  fetch("https://script.google.com/macros/s/AKfycbwj5KwjllKDKnnbL8H1rgwBA5cIDIh7bsXznueoNdJLCUKo-FAGOwBU_F7K1kkT1pThJw/exec", {
+    method: "POST",
+      headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ wish: wish })
+  });
+
+  alert("Wish saved! ✨");
+
+  // Transition to the final screen
+  revealFinal();
+}
+
+function startPhotoLane() {
+  showSection("photo-lane");
+
+  // 🎵 Start memory music, pause background
+  const memoryMusic = document.getElementById("memoryLaneMusic");
+  const bgMusic = document.getElementById("bgMusic");
+
+  if (bgMusic) bgMusic.pause();
+  if (memoryMusic) {
+    memoryMusic.currentTime = 0;
+    memoryMusic.play();
+  }
+
+  // 🖼️ Photo sequence setup
+  const imagePaths = Array.from({ length: 12 }, (_, i) => `assets/img_${i + 1}.png`);
+  const gallery = document.getElementById("photo-gallery");
+
+  gallery.innerHTML = "";
+  const img = document.createElement("img");
+  img.className = "memory-photo";
+  img.style.opacity = 0;
+  gallery.appendChild(img);
+
+  let index = 0;
+  const fadeDuration = 500;
+  const displayTime = 8750; // 8.75s per photo to match song
+
+  function showNextImage() {
+    if (index >= imagePaths.length) {
+      revealFinal();
+      return;
+    }
+
+    // Fade out old image
+    img.style.transition = `opacity ${fadeDuration}ms`;
+    img.style.opacity = 0;
+
+    setTimeout(() => {
+      img.src = imagePaths[index];
+      img.onload = () => {
+        img.style.transition = `opacity ${fadeDuration}ms`;
+        img.style.opacity = 1;
+      };
+      index++;
+      setTimeout(showNextImage, displayTime);
+    }, fadeDuration);
+  }
+
+  // Start the show after initial fade-in
+  img.onload = () => {
+    img.style.transition = `opacity ${fadeDuration}ms`;
+    img.style.opacity = 1;
+    setTimeout(showNextImage, displayTime);
+  };
+
+  // Kick off with the first image
+  img.src = imagePaths[index++];
+}
+
+
+    function unlockStar(msg) {
+      stars.push(msg);
+      const p = document.createElement('p');
+      p.innerText = msg;
+      document.getElementById('stars-unlocked').appendChild(p);
+    }
+
+    function goToNextPuzzle() {
+  if (stars.length === 1) {
+    showSection("puzzle-2");
+  } else if (stars.length === 2) {
+    showSection("puzzle-3"); // We'll add this later
+  } else if (stars.length === 3) {
+    startSlidingPuzzle();    // Puzzle 4
+  } else {
+    revealFinal();
+  }
+}
+
+function showSection(id) {
+  console.log("Switching to section:", id);
+  const allSections = document.querySelectorAll('.section');
+  const target = document.getElementById(id);
+
+  if (!target) {
+    console.error(`Section with ID '${id}' not found`);
+    return;
+  }
+
+  allSections.forEach(sec => sec.classList.remove('active'));
+  target.classList.add('active');
+}
+
+
+
+
+function revealFinal() {
+  showSection("final-surprise");
+
+  const msg = document.getElementById("final-message");
+  if (msg) {
+    msg.innerText = "You’re a galaxy all on your own. Happy 18th, star of my sky 🌌💖";
+  }
+
+  // Optionally play music or trigger confetti
+  const finalMusic = document.getElementById("final-music");
+  if (finalMusic) {
+    finalMusic.currentTime = 0;
+    finalMusic.play();
+  }
+
+  triggerFireworks();
+}
+
+  </script>
+  <audio id="memoryLaneMusic" src="assets/music/memory-lane.mp3" preload="auto" loop></audio>
+
+</body>
+</html>
